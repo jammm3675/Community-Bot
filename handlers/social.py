@@ -5,7 +5,6 @@ from loader import db
 
 router = Router()
 
-
 @router.message(F.text, F.chat.type.in_({"group", "supergroup"}))
 async def handle_message_xp(message: Message, bot: Bot):
     if message.text.startswith("/"):
@@ -29,7 +28,6 @@ async def handle_message_xp(message: Message, bot: Bot):
         if new_level > old_level:
             await update_user_tag(bot, message.chat.id, user_id, new_level)
 
-
 async def update_user_tag(bot: Bot, chat_id: int, user_id: int, level: int):
     tag = "Новичок"
     if 5 <= level < 20:
@@ -42,24 +40,28 @@ async def update_user_tag(bot: Bot, chat_id: int, user_id: int, level: int):
     except Exception:
         pass  # Ignore if no permissions
 
-
 @router.message(Command("thanks"))
 async def handle_thanks(message: Message):
     if not message.reply_to_message:
-        await message.reply("Reply to a message to give reputation!")
+        await message.reply("☝️ Reply to a message to give reputation!")
         return
 
     from_user_id = message.from_user.id
     to_user_id = message.reply_to_message.from_user.id
 
     if from_user_id == to_user_id:
-        await message.reply("You cannot give rep to yourself!")
+        await message.reply("🚫 You cannot give rep to yourself!")
         return
 
     success, msg = await db.give_rep(from_user_id, to_user_id)
     if success:
-        await message.reply(
-            f"⭐ You gave +1 REP to {message.reply_to_message.from_user.first_name}!"
+        text = (
+            f"⭐ <b>Reputation Increased!</b>\n\n"
+            f"<blockquote>"
+            f"You gave +1 REP to {message.reply_to_message.from_user.first_name}!\n"
+            f"Keep being helpful! <tg-emoji id='5368324170671202286'>🤝</tg-emoji>"
+            f"</blockquote>"
         )
+        await message.reply(text)
     else:
         await message.reply(f"❌ {msg}")
