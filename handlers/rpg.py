@@ -2,12 +2,13 @@ from aiogram import Router, Bot, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from loader import db, ADMIN_IDS
-from utils import safe_edit_text, safe_answer, get_progress_bar, calculate_level_stats
+from utils import safe_edit_text, safe_answer, get_progress_bar, calculate_level_stats, safe_send_animation
 from keyboards.menu import get_main_menu_keyboard, get_lot_kb, get_admin_supply_kb
 
 router = Router()
 
-DEFAULT_GIF = "CgACAgIAAxkBAAEbt3NpqAn2obJdHyFVZbi_JOspLX96KAAC7pQAAkCBQEk_A-aRj7qxNToE"
+# Обновленный ID/URL гифки
+DEFAULT_GIF = "https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif"
 
 MENU_TEXT = (
     "<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji><b> NOTAPES | ECOSYSTEM </b><tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>\n\n"
@@ -21,7 +22,8 @@ async def show_menu(message: Message):
     # Получаем GIF из базы. Если в базе пусто, используем старый ID как запасной
     gif_id = await db.get_setting("main_gif", DEFAULT_GIF)
 
-    await message.answer_animation(
+    await safe_send_animation(
+        target=message,
         animation=gif_id,
         caption=MENU_TEXT,
         reply_markup=get_main_menu_keyboard(message.from_user.id)
@@ -36,7 +38,8 @@ async def show_menu_cb(callback: CallbackQuery):
 
     gif_id = await db.get_setting("main_gif", DEFAULT_GIF)
 
-    await callback.message.answer_animation(
+    await safe_send_animation(
+        target=callback.message,
         animation=gif_id,
         caption=MENU_TEXT,
         reply_markup=get_main_menu_keyboard(callback.from_user.id)
