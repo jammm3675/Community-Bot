@@ -1,7 +1,9 @@
+import logging
 from aiogram import Router, Bot, F
 from aiogram.types import Message
 from aiogram.filters import Command
 from loader import db
+from utils import calculate_level_stats
 
 router = Router()
 
@@ -23,22 +25,18 @@ async def handle_message_xp(message: Message, bot: Bot):
     result = await db.add_xp(user_id, 10)
     if result:
         xp_added, new_level = result
-        # Check if level changed and update tag
-        old_level = user.get("level", 1)
-        if new_level > old_level:
-            await update_user_tag(bot, message.chat.id, user_id, new_level)
+        # Принудительное обновление тега (Custom Title) при каждом сообщении
+        # Теги: 1-5 лвл: Новичок 👶, 5-20: Ветеран 🎖, 20+: VIP ⚡️
+        await update_user_tag(bot, message.chat.id, user_id, new_level)
 
 async def update_user_tag(bot: Bot, chat_id: int, user_id: int, level: int):
-    tag = "Новичок"
-    if 5 <= level < 20:
-        tag = "Ветеран"
-    elif level >= 20:
-        tag = "VIP"
-
+    # Прямое вшивание текста тегов
+    tag = "Новичок 👶" if level < 5 else "Ветеран 🎖" if level < 20 else "VIP ⚡️"
     try:
         await bot.set_chat_member_custom_title(chat_id, user_id, tag)
-    except Exception:
-        pass  # Ignore if no permissions
+    except Exception as e:
+        # Логируем, но не падаем
+        logging.error(f"[SYNC] Failed to update tag for {user_id} in {chat_id}: {e}")
 
 @router.message(Command("thanks"))
 async def handle_thanks(message: Message):

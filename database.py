@@ -1,4 +1,5 @@
 import os
+import logging
 from datetime import datetime, timezone, timedelta
 from supabase import create_client, Client
 from dotenv import load_dotenv
@@ -11,6 +12,24 @@ class Database:
         url: str = os.getenv("SUPABASE_URL")
         key: str = os.getenv("SUPABASE_KEY")
         self.supabase: Client = create_client(url, key)
+
+    async def get_setting(self, key: str, default: str = None) -> str:
+        """Получает значение настройки из таблицы settings."""
+        try:
+            response = self.supabase.table("settings").select("value").eq("key", key).execute()
+            if response.data:
+                return response.data[0]["value"]
+            return default
+        except Exception as e:
+            logging.error(f"Error getting setting {key}: {e}")
+            return default
+
+    async def update_setting(self, key: str, value: str):
+        """Обновляет или создает настройку."""
+        try:
+            self.supabase.table("settings").upsert({"key": key, "value": value}).execute()
+        except Exception as e:
+            logging.error(f"Error updating setting {key}: {e}")
 
     async def get_user(self, user_id: int):
         response = (
@@ -156,32 +175,35 @@ class Database:
         return self.supabase.table("secret_lots").insert(data).execute()
 
     async def buy_secret_lot(self, user_id: int, lot_id: int):
-        lot_resp = (
-            self.supabase.table("secret_lots").select("*").eq("id", lot_id).execute()
-        )
+        # 1. Получаем инфо о лоте
+        lot_resp = self.supabase.table("secret_lots").select("*").eq("id", lot_id).execute()
         if not lot_resp.data:
-            return False, "Lot not found"
+            return False, "Лот не найден"
 
         lot = lot_resp.data[0]
+
+        # 2. Проверяем лимиты
         if lot["activations_count"] >= lot.get("max_activations", 999999):
-            return False, "Sold out"
+            return False, "Все лоты уже разобраны!"
 
+        # 3. Проверяем баланс пользователя
         user = await self.get_user(user_id)
-        if user["xp"] < lot["xp_cost"]:
-            return False, "Not enough XP"
+        if not user or user["xp"] < lot["xp_cost"]:
+            return False, f"Недостаточно XP! Нужно: {lot['xp_cost']}"
 
-        # Deduct XP (fixed amount, no multipliers)
+        # 4. Списываем XP
         new_xp = user["xp"] - lot["xp_cost"]
         await self.update_user(user_id, xp=new_xp)
 
-        # Log buy
-        self.supabase.table("secret_lot_buys").insert(
-            {"lot_id": lot_id, "user_id": user_id}
-        ).execute()
+        # 5. Обновляем счетчик активаций в лоте
+        new_count = lot["activations_count"] + 1
+        self.supabase.table("secret_lots").update({"activations_count": new_count}).eq("id", lot_id).execute()
 
-        # Update activation count
-        self.supabase.table("secret_lots").update(
-            {"activations_count": lot["activations_count"] + 1}
-        ).eq("id", lot_id).execute()
+        # 6. Логируем покупку
+        self.supabase.table("secret_lot_buys").insert({
+            "lot_id": lot_id,
+            "user_id": user_id,
+            "created_at": datetime.now(timezone.utc).isoformat()
+        }).execute()
 
-        return True, "Success"
+        return True, "Успешно приобретено!"

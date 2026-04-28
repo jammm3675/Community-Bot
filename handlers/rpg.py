@@ -3,19 +3,43 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command
 from loader import db, ADMIN_IDS
 from utils import safe_edit_text, safe_answer, get_progress_bar, calculate_level_stats
-from keyboards.menu import get_main_menu, get_lot_kb, get_admin_supply_kb
+from keyboards.menu import get_main_menu_keyboard, get_lot_kb, get_admin_supply_kb
 
 router = Router()
+
+DEFAULT_GIF = "CgACAgIAAxkBAAEbt3NpqAn2obJdHyFVZbi_JOspLX96KAAC7pQAAkCBQEk_A-aRj7qxNToE"
+
+MENU_TEXT = (
+    "<tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji><b> NOTAPES | ECOSYSTEM </b><tg-emoji emoji-id=\"5273867703709361006\">👿</tg-emoji>\n\n"
+    "<blockquote>Добро пожаловать в наш пиксельный мир.\n"
+    "Управляй профилем, участвуй в сделках и следи за лидербордом ниже.</blockquote>"
+)
 
 @router.message(Command("start"))
 @router.message(Command("menu"))
 async def show_menu(message: Message):
-    await message.answer("Welcome to NOTAPES Ecosystem!", reply_markup=get_main_menu(message.from_user.id))
+    # Получаем GIF из базы. Если в базе пусто, используем старый ID как запасной
+    gif_id = await db.get_setting("main_gif", DEFAULT_GIF)
+
+    await message.answer_animation(
+        animation=gif_id,
+        caption=MENU_TEXT,
+        reply_markup=get_main_menu_keyboard(message.from_user.id)
+    )
 
 @router.callback_query(F.data == "menu_main")
 async def show_menu_cb(callback: CallbackQuery):
-    await safe_edit_text(
-        callback.message, "Welcome to NOTAPES Ecosystem!", reply_markup=get_main_menu(callback.from_user.id)
+    try:
+        await callback.message.delete()
+    except Exception:
+        pass
+
+    gif_id = await db.get_setting("main_gif", DEFAULT_GIF)
+
+    await callback.message.answer_animation(
+        animation=gif_id,
+        caption=MENU_TEXT,
+        reply_markup=get_main_menu_keyboard(callback.from_user.id)
     )
     await safe_answer(callback)
 
@@ -26,21 +50,18 @@ async def show_stats(callback: CallbackQuery):
         await safe_answer(callback, "You need to send some messages first!", show_alert=True)
         return
 
-    level, xp_in_lvl, percent = calculate_level_stats(user["xp"])
-    progress_bar = get_progress_bar(percent)
+    # Прямой расчет уровня из XP (игнорируем колонку level в БД для отображения)
+    level, xp_in_lvl, percent = calculate_level_stats(user['xp'])
 
     text = (
-        f"👤 <b>Profile: {callback.from_user.first_name}</b>\n\n"
-        f"<blockquote>"
-        f"<b>Level {level}</b>\n"
-        f"{progress_bar} {int(percent)}%\n\n"
-        f"🔥 <b>XP:</b> {user['xp']}\n"
-        f"⭐ <b>REP:</b> {user['rep']}\n"
-        f"⚡ <b>Streak:</b> {user['streak']} days"
-        f"</blockquote>"
+        "<tg-emoji emoji-id=\"5273741156792951269\">🏆</tg-emoji> <b>ИНФОРМАЦИЯ О ГЕРОЕ</b>\n\n"
+        f"<blockquote>Имя: {callback.from_user.first_name}\n"
+        f"Уровень: {level}\n"
+        f"Опыт: {xp_in_lvl}/1000</blockquote>\n\n"
+        f"<b>Прогресс:</b>\n{get_progress_bar(percent)} {int(percent)}%"
     )
 
-    await safe_edit_text(callback.message, text, reply_markup=get_main_menu(callback.from_user.id))
+    await safe_edit_text(callback.message, text, reply_markup=get_main_menu_keyboard(callback.from_user.id))
     await safe_answer(callback)
 
 @router.callback_query(F.data == "rpg_top")
@@ -51,30 +72,19 @@ async def show_top(callback: CallbackQuery):
     for i, user in enumerate(top_users.data, 1):
         text += f"{i}. {user['first_name']} — {user['xp']} XP 🔥{user['streak']}\n"
 
-    await safe_edit_text(callback.message, text, reply_markup=get_main_menu(callback.from_user.id))
+    await safe_edit_text(callback.message, text, reply_markup=get_main_menu_keyboard(callback.from_user.id))
     await safe_answer(callback)
 
 @router.callback_query(F.data == "rpg_tags")
-async def show_tags(callback: CallbackQuery):
-    user = await db.get_user(callback.from_user.id)
-    level = user.get("level", 1) if user else 1
-
-    tag = "Новичок"
-    if 5 <= level < 20:
-        tag = "Ветеран"
-    elif level >= 20:
-        tag = "VIP"
-
+async def show_tags_info(callback: CallbackQuery):
     text = (
-        f"🏷 <b>Your Current Tag Status</b>\n\n"
-        f"<blockquote>"
-        f"<b>Current Tag:</b> {tag}\n"
-        f"<b>Level:</b> {level}\n\n"
-        f"<i>Tags are automatically updated when you level up.</i>"
-        f"</blockquote>"
+        "<tg-emoji emoji-id=\"5296348778012361146\">🏷</tg-emoji> <b>СИСТЕМА ТЕГОВ</b>\n\n"
+        "<blockquote>Тег отображается рядом с твоим именем в чате.\n\n"
+        "👶 Новичок: с 1 уровня\n"
+        "🎖 Ветеран: с 5 уровня\n"
+        "⚡️ VIP: с 20 уровня</blockquote>"
     )
-
-    await safe_edit_text(callback.message, text, reply_markup=get_main_menu(callback.from_user.id))
+    await safe_edit_text(callback.message, text, reply_markup=get_main_menu_keyboard(callback.from_user.id))
     await safe_answer(callback)
 
 @router.callback_query(F.data == "rpg_burn")
@@ -112,8 +122,8 @@ async def process_burn(callback: CallbackQuery):
     else:
         await safe_answer(callback, f"❌ {msg}", show_alert=True)
 
-@router.callback_query(F.data == "admin_supply_menu")
-async def admin_supply_menu(callback: CallbackQuery):
+@router.callback_query(F.data == "admin_supply_panel")
+async def admin_supply_panel(callback: CallbackQuery):
     if callback.from_user.id not in ADMIN_IDS:
         await safe_answer(callback, "Access denied!", show_alert=True)
         return

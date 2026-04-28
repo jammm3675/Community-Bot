@@ -3,7 +3,7 @@ from aiogram import Router, Bot, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from states.otc_states import OTCStates
-from keyboards.menu import get_otc_type_kb, get_main_menu
+from keyboards.menu import get_otc_type_kb, get_main_menu_keyboard
 from loader import db
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from utils import safe_edit_text, safe_answer
@@ -91,7 +91,7 @@ async def otc_price_entered(message: Message, state: FSMContext, bot: Bot):
         )
         await message.answer(
             "✅ <b>Order Posted!</b>\n\nYour OTC order has been successfully sent to the channel.",
-            reply_markup=get_main_menu(message.from_user.id)
+            reply_markup=get_main_menu_keyboard(message.from_user.id)
         )
     except Exception as e:
         await message.answer(f"❌ Error posting to channel: {str(e)}")
