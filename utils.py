@@ -1,7 +1,49 @@
 import asyncio
 import re
+import logging
 from aiogram.types import Message, CallbackQuery
 from aiogram.exceptions import TelegramBadRequest
+
+async def safe_send_animation(target, animation, caption, reply_markup=None, parse_mode="HTML", chat_id=None):
+    """
+    Attempts to send an animation. Falls back to text message if animation fails.
+    'target' can be a Message object or a Bot object.
+    If 'target' is a Bot, 'chat_id' must be provided.
+    """
+    try:
+        if not animation:
+            raise ValueError("Animation ID/URL is empty")
+
+        if isinstance(target, Message):
+            return await target.answer_animation(
+                animation=animation,
+                caption=caption,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
+            )
+        else:
+            return await target.send_animation(
+                chat_id=chat_id,
+                animation=animation,
+                caption=caption,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
+            )
+    except Exception as e:
+        logging.error(f"Error sending animation (fallback to text): {e}")
+        if isinstance(target, Message):
+            return await target.answer(
+                text=caption,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
+            )
+        else:
+            return await target.send_message(
+                chat_id=chat_id,
+                text=caption,
+                reply_markup=reply_markup,
+                parse_mode=parse_mode
+            )
 
 async def safe_edit_text(message: Message, text: str, reply_markup=None, parse_mode="HTML"):
     try:

@@ -5,13 +5,13 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
 from aiogram.fsm.context import FSMContext
 from loader import db, ADMIN_IDS
 from states.admin_states import SupplyCreation
-from utils import safe_edit_text, safe_answer
+from utils import safe_edit_text, safe_answer, safe_send_animation
 from keyboards.menu import get_admin_supply_kb, get_main_menu_keyboard
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 router = Router()
 
-DEFAULT_GIF = "CgACAgIAAxkBAAEbt3NpqAn2obJdHyFVZbi_JOspLX96KAAC7pQAAkCBQEk_A-aRj7qxNToE"
+DEFAULT_GIF = "https://media.giphy.com/media/vFKqnCdLPNOKc/giphy.gif"
 
 def get_cancel_kb():
     builder = InlineKeyboardBuilder()
@@ -43,17 +43,19 @@ async def update_admin_msg(chat_id: int, state: FSMContext, bot: Bot, text: str,
                 parse_mode="HTML"
             )
             return
-        except Exception:
-            pass
+        except Exception as e:
+            logging.error(f"Error editing admin message caption: {e}")
 
     # Fallback to new message
-    msg = await bot.send_animation(
+    msg = await safe_send_animation(
+        target=bot,
         chat_id=chat_id,
         animation=gif_id,
         caption=text,
         reply_markup=reply_markup
     )
-    await state.update_data(admin_msg_id=msg.message_id)
+    if msg:
+        await state.update_data(admin_msg_id=msg.message_id)
 
 async def show_preview(chat_id: int, state: FSMContext, bot: Bot):
     data = await state.get_data()
@@ -90,13 +92,15 @@ async def start_supply_creation(callback: CallbackQuery, state: FSMContext, bot:
 
     gif_id = await db.get_setting("main_gif", DEFAULT_GIF)
 
-    msg = await bot.send_animation(
+    msg = await safe_send_animation(
+        target=bot,
         chat_id=callback.message.chat.id,
         animation=gif_id,
         caption=text,
         reply_markup=get_cancel_kb()
     )
-    await state.update_data(admin_msg_id=msg.message_id)
+    if msg:
+        await state.update_data(admin_msg_id=msg.message_id)
     await state.set_state(SupplyCreation.entering_name)
     await safe_answer(callback)
 
