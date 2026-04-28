@@ -2,27 +2,18 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.types import InlineKeyboardButton
 from loader import ADMIN_IDS
 
-def get_main_menu(user_id: int = None):
+def get_main_menu_keyboard(user_id: int):
     builder = InlineKeyboardBuilder()
-    builder.row(
-        InlineKeyboardButton(text="👤 Profile", callback_data="rpg_stats"),
-        InlineKeyboardButton(text="📦 OTC", callback_data="otc_start"),
-    )
-    builder.row(
-        InlineKeyboardButton(text="🏆 Leaderboard", callback_data="rpg_top"),
-        InlineKeyboardButton(text="🏷 Tags", callback_data="rpg_tags"),
-    )
+    builder.button(text="👤 Profile", callback_data="rpg_stats", icon_custom_emoji_id="5258185631355378853")
+    builder.button(text="📦 OTC", callback_data="otc_start", icon_custom_emoji_id="5257969839313526622")
+    builder.button(text="🏆 Top", callback_data="rpg_top", icon_custom_emoji_id="5273741156792951269")
+    builder.button(text="🏷 Tags", callback_data="rpg_tags", icon_custom_emoji_id="5296348778012361146")
 
-    # Only show Secret Supply for admins or if we want to show it to everyone (as per requirements refactoring)
-    # The requirement says: "For normal users: Button is hidden. For admins: Button opens management."
+    # Доступ к Secret Supply только для админов
     if user_id in ADMIN_IDS:
-        builder.row(InlineKeyboardButton(text="⚙️ Manage Supplies", callback_data="admin_supply_menu"))
-    else:
-        # According to point 3: "For ordinary users: The button is hidden."
-        # However, point 1 mentions "start OTC, view profile" should have GIFs like in donor.
-        # Let's keep it hidden for now as per point 3.
-        pass
+         builder.button(text="⚙️ Admin Supply", callback_data="admin_supply_panel", icon_custom_emoji_id="5258096772776991776")
 
+    builder.adjust(2)
     return builder.as_markup()
 
 def get_otc_type_kb():
