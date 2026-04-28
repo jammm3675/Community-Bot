@@ -144,6 +144,17 @@ class Database:
             .execute()
         )
 
+    async def create_secret_lot(self, title, description, xp_cost, max_activations):
+        data = {
+            "title": title,
+            "description": description,
+            "xp_cost": xp_cost,
+            "max_activations": max_activations,
+            "activations_count": 0,
+            "is_active": True
+        }
+        return self.supabase.table("secret_lots").insert(data).execute()
+
     async def buy_secret_lot(self, user_id: int, lot_id: int):
         lot_resp = (
             self.supabase.table("secret_lots").select("*").eq("id", lot_id).execute()
