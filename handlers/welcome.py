@@ -11,9 +11,6 @@ from utils import delete_after_delay
 
 router = Router()
 
-# Placeholder for GIF ID from donor
-WELCOME_GIF = "CgACAgIAAxkBAAEYx..."
-
 @router.chat_member(
     ChatMemberUpdatedFilter(member_status_changed=IS_NOT_MEMBER >> IS_MEMBER)
 )
