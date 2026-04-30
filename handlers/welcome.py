@@ -18,13 +18,17 @@ async def welcome_new_member(event: ChatMemberUpdated, bot: Bot):
     user = event.new_chat_member.user
 
     text = (
-        f"👋 <b>Welcome to NOTAPES World!</b>\n\n"
-        f"<blockquote>"
-        f"Glad to see you, {user.mention_html()}! <tg-emoji id='5368324170671202286'>✨</tg-emoji>\n\n"
-        f"ℹ️ <b>Information:</b>\n"
-        f"• Founder: <a href='https://t.me/notapes'>NOTAPES</a>\n"
-        f"• Chat rules: <a href='https://t.me/notapes_rules'>Read Rules</a>"
-        f"</blockquote>"
+        f"┏{ 👿 }.. ⋐(    •︠ ﹏ •︡  )っ🍌"
+        f"┋"
+        f"┣ WELCOME TO MY PIXEL WORLD!"
+        f"┋"
+        f"┣ CEO: KLASSIKA  <a href='https://t.me/notapes'>NOTAPES</a>\n"
+        f"┋"
+        f"┣ RULES <a href='https://t.me/notapes_rules'>Read Rules</a>"
+        f"┋"
+        f"┣ TOOLS"
+        f"┋"
+        f"┗┅ [ HUMANS.. NOT APES ]"
     )
 
     try:
