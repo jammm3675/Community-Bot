@@ -18,16 +18,16 @@ async def welcome_new_member(event: ChatMemberUpdated, bot: Bot):
     user = event.new_chat_member.user
 
     text = (
-        f"┏{ 👿 }.. ⋐(    •︠ ﹏ •︡  )っ🍌"
-        f"┋"
-        f"┣ WELCOME TO MY PIXEL WORLD!"
-        f"┋"
-        f"┣ CEO: KLASSIKA  <a href='https://t.me/notapes'>NOTAPES</a>\n"
-        f"┋"
-        f"┣ RULES <a href='https://t.me/notapes_rules'>Read Rules</a>"
-        f"┋"
-        f"┣ TOOLS"
-        f"┋"
+        f"┏{ 👿 }.. ⋐(    •︠ ﹏ •︡  )っ🍌\n"
+        f"┋\n"
+        f"┣ WELCOME TO MY PIXEL WORLD!\n"
+        f"┋\n"
+        f"┣ CEO: KLASSIKA href='https://t.me/notapes'>\n"
+        f"┋\n"
+        f"┣ RULES href='https://t.me/notapes_rules'>"
+        f"┋\n"
+        f"┣ TOOLS href='https://t.me/notapes' \n"
+        f"┋\n"
         f"┗┅ [ HUMANS.. NOT APES ]"
     )
 
